@@ -65,16 +65,9 @@ rgb mandelbrot(int px, int py, rgb* palette){
 
 }
 
-
-int main(){
-    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
-    for(int y = 0;y < Y;y++){
-        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
-    }
-    rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
-    printf("made arrays\n");
-    for(int i=0;i<MAX_ITER+1;i++){
-        if (i >= MAX_ITER){
+rgb* make_pallete(int size){
+    for(int i=0;i<size+1;i++){
+        if (i >= size){
             palette[i] = (rgb){.r=0,.g=0,.b=0};
             continue;
         }
@@ -82,7 +75,7 @@ int main(){
         if(i == 0){
             j = 3.0;
         }else{
-            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
+            j = 3.0 * (log(i)/log(size-1.0));
         }
 
         if (j<1){
@@ -105,7 +98,15 @@ int main(){
             };
         }
     }
+}
 
+
+int main(){
+    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
+    for(int y = 0;y < Y;y++){
+        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
+    }
+    rgb* palette = make_pallete(MAX_ITER);
 
     printf("finished palette\n");
     for(int Py = 0; Py < Y; Py++){
