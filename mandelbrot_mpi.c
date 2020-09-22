@@ -1,8 +1,8 @@
-// https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set#Continuous_(smooth)_coloring
-
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
+#include "mpi.h"
 
 #define X 1920
 #define Y 1080
@@ -24,7 +24,6 @@ double lerp(double v0, double v1, double t) {
     return (1 - t) * v0 + t * v1;
 }
 
-
 rgb mandelbrot(int px, int py, rgb* palatte){
     double x = 0; // complex (c)
     double y = 0;
@@ -41,9 +40,9 @@ rgb mandelbrot(int px, int py, rgb* palatte){
         i++;
     }
     if(i < MAX_ITER){
-        double log_zn = log(x*x + y*y) / 2.0;
-        double nu = log(log_zn / log(2.0))/log(2.0);
-        i += 1.0 - nu;
+        double log_zn = log(x*x + y*y) / 2;
+        double nu = log(log_zn / log(2))/log(2);
+        i += 1 - nu;
     }
     rgb c1 = palatte[(int)i];
     rgb c2;
@@ -63,7 +62,17 @@ rgb mandelbrot(int px, int py, rgb* palatte){
 }
 
 
-int main(){
+int main(int argc, char* argv[]){
+    int size, rank;
+
+    MPI_Status status;
+    int tag = 0;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size( MPI_COMM_WORLD , &size ) ;
+    MPI_Comm_rank( MPI_COMM_WORLD , &rank ) ;
+
+
     rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
     for(int y = 0;y < Y;y++){
         colors[y] = (rgb*)malloc(sizeof(rgb)*X);
@@ -75,30 +84,29 @@ int main(){
             palatte[i] = (rgb){.r=0,.g=0,.b=0};
             continue;
         }
-        double j;
-        if(i == 0){
-            j = 3.0;
-        }else{
-            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
+        double j = 3.0 * (i == 0 ? 0:log(i))/log(MAX_ITER-1.0);
+
+        if (j<0){
+            j *= -1;
         }
 
         if (j<1){
             palatte[i] = (rgb){
-                    .r = 0,
-                    .g = 255 * j,
-                    .b = 0
+                .r = 0,
+                .g = 255 * j,
+                .b = 0
             };
         }else if(j<2){
             palatte[i] = (rgb){
-                    .r = 255*(j-1),
-                    .g = 255,
-                    .b = 0,
+                .r = 255*(j-1),
+                .g = 255,
+                .b = 0,
             };
         }else{
             palatte[i] = (rgb){
-                    .r = 255 * (j-2),
-                    .g = 255,
-                    .b = 255,
+                .r = 255 * (j-2),
+                .g = 255,
+                .b = 255,
             };
         }
     }
@@ -118,7 +126,7 @@ int main(){
     fprintf(fout, "255\n");
     for(int y = 0; y < Y; y++){
         for(int x = 0; x < X; x++){
-            fprintf(fout, "%ld %ld %ld\n", (int)colors[y][x].r, (int)colors[y][x].g, (int)colors[y][x].b);
+            fprintf(fout, "%ld %ld %ld\n", colors[y][x].r, colors[y][x].g, colors[y][x].b);
         }
     }
 }
