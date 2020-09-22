@@ -25,7 +25,7 @@ double lerp(double v0, double v1, double t) {
 }
 
 
-rgb mandelbrot(int px, int py, rgb* palatte){
+rgb mandelbrot(int px, int py, rgb* palette){
     double x = 0; // complex (c)
     double y = 0;
 
@@ -45,12 +45,12 @@ rgb mandelbrot(int px, int py, rgb* palatte){
         double nu = log(log_zn / log(2.0))/log(2.0);
         i += 1.0 - nu;
     }
-    rgb c1 = palatte[(int)i];
+    rgb c1 = palette[(int)i];
     rgb c2;
     if((int)i + 1 > MAX_ITER){
-        c2 = palatte[(int)i];
+        c2 = palette[(int)i];
     }else{
-        c2 = palatte[((int)i)+1];
+        c2 = palette[((int)i)+1];
     }
 
     double mod = i - ((int)i) ; // cant mod doubles
@@ -68,11 +68,11 @@ int main(){
     for(int y = 0;y < Y;y++){
         colors[y] = (rgb*)malloc(sizeof(rgb)*X);
     }
-    rgb* palatte = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
+    rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
     printf("made arrays\n");
     for(int i=0;i<MAX_ITER+1;i++){
         if (i >= MAX_ITER){
-            palatte[i] = (rgb){.r=0,.g=0,.b=0};
+            palette[i] = (rgb){.r=0,.g=0,.b=0};
             continue;
         }
         double j;
@@ -83,19 +83,19 @@ int main(){
         }
 
         if (j<1){
-            palatte[i] = (rgb){
+            palette[i] = (rgb){
                     .r = 0,
                     .g = 255 * j,
                     .b = 0
             };
         }else if(j<2){
-            palatte[i] = (rgb){
+            palette[i] = (rgb){
                     .r = 255*(j-1),
                     .g = 255,
                     .b = 0,
             };
         }else{
-            palatte[i] = (rgb){
+            palette[i] = (rgb){
                     .r = 255 * (j-2),
                     .g = 255,
                     .b = 255,
@@ -104,10 +104,10 @@ int main(){
     }
 
 
-    printf("finished palatte\n");
+    printf("finished palette\n");
     for(int Py = 0; Py < Y; Py++){
         for(int Px = 0; Px < X; Px++){
-            colors[Py][Px] = mandelbrot(Px, Py, palatte);
+            colors[Py][Px] = mandelbrot(Px, Py, palette);
         }
     }
     printf("finished calcs\n");
