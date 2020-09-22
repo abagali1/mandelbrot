@@ -66,6 +66,7 @@ rgb mandelbrot(int px, int py, rgb* palette){
 }
 
 rgb* make_pallete(int size){
+    rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
     for(int i=0;i<size+1;i++){
         if (i >= size){
             palette[i] = (rgb){.r=0,.g=0,.b=0};
