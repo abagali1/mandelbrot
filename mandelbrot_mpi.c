@@ -32,13 +32,17 @@ rgb mandelbrot(int px, int py, rgb* palette){
     double y0 = I_MIN + (py * ((I_MAX - I_MIN)/(Y*1.0))); // complex scale of Py
 
     double i = 0;
+    double x2 = 0;
+    double y2 = 0;
 
     while(x*x + y*y <= 20 && i < MAX_ITER){
-        double xtemp = x*x - y*y + x0;
         y = 2*x*y + y0;
-        x = xtemp;
+        x = x2 - y2 + x0;
+        x2 = x*x;
+        y2 = y*y;
         i++;
     }
+
     if(i < MAX_ITER){
         double log_zn = log(x*x + y*y) / 2.0;
         double nu = log(log_zn / log(2.0))/log(2.0);
@@ -61,16 +65,10 @@ rgb mandelbrot(int px, int py, rgb* palette){
 
 }
 
-
-int main(){
-    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
-    for(int y = 0;y < Y;y++){
-        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
-    }
-    rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
-    printf("made arrays\n");
-    for(int i=0;i<MAX_ITER+1;i++){
-        if (i >= MAX_ITER){
+rgb* make_palette(int size){
+    rgb* palette = (rgb*)malloc(sizeof(rgb)*size);
+    for(int i=0;i<size+1;i++){
+        if (i >= size){
             palette[i] = (rgb){.r=0,.g=0,.b=0};
             continue;
         }
@@ -78,9 +76,8 @@ int main(){
         if(i == 0){
             j = 3.0;
         }else{
-            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
+            j = 3.0 * (log(i)/log(size-1.0));
         }
-
         if (j<1){
             palette[i] = (rgb){
                     .r = 0,
@@ -101,15 +98,14 @@ int main(){
             };
         }
     }
+}
 
-
-    printf("finished palette\n");
-    for(int Py = 0; Py < Y; Py++){
-        for(int Px = 0; Px < X; Px++){
-            colors[Py][Px] = mandelbrot(Px, Py, palette);
-        }
+void master(int workers, rgb* palette){
+    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
+    for(int y = 0;y < Y;y++){
+        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
     }
-    printf("finished calcs\n");
+
     FILE* fout;
     fout = fopen("output/ms.ppm", "w");
     fprintf(fout, "P3\n");
@@ -120,4 +116,36 @@ int main(){
             fprintf(fout, "%ld %ld %ld\n", (int)colors[y][x].r, (int)colors[y][x].g, (int)colors[y][x].b);
         }
     }
+}
+
+void slave(int workers, int rank, rgb* palette){
+
+}
+
+int main(int argc, char* argv[]){
+
+    int size, rank;
+    Mpi_Status status;
+    int tag = 0;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size( MPI_COMM_WORLD, &size);
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank);
+
+    rgb* palette = make_palette(MAX_ITER);
+    printf("finished palette\n");
+
+
+    for(int Py = 0; Py < Y; Py++){
+        for(int Px = 0; Px < X; Px++){
+            colors[Py][Px] = mandelbrot(Px, Py, palette);
+        }
+    }
+
+    if(rank == 0){
+        master(size, palette)
+    }else{
+        slave(size, rank, palette)
+    }
+
 }

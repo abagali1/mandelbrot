@@ -33,11 +33,14 @@ rgb mandelbrot(int px, int py, rgb* palette){
     double y0 = I_MIN + (py * ((I_MAX - I_MIN)/(Y*1.0))); // complex scale of Py
 
     double i = 0;
+    double x2 = 0;
+    double y2 = 0;
   
     while(x*x + y*y <= 20 && i < MAX_ITER){
-        double xtemp = x*x - y*y + x0;
         y = 2*x*y + y0;
-        x = xtemp;
+        x = x2 - y2 + x0;
+        x2 = x*x;
+        y2 = y*y;
         i++;
     }
     if(i < MAX_ITER){
