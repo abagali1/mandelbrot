@@ -65,41 +65,6 @@ rgb mandelbrot(int px, int py, rgb* palette){
 
 }
 
-rgb* make_palette(int size){
-    rgb* palette = (rgb*)malloc(sizeof(rgb)*size);
-    for(int i=0;i<size+1;i++){
-        if (i >= size){
-            palette[i] = (rgb){.r=0,.g=0,.b=0};
-            continue;
-        }
-        double j;
-        if(i == 0){
-            j = 3.0;
-        }else{
-            j = 3.0 * (log(i)/log(size-1.0));
-        }
-        if (j<1){
-            palette[i] = (rgb){
-                    .r = 0,
-                    .g = 255 * j,
-                    .b = 0
-            };
-        }else if(j<2){
-            palette[i] = (rgb){
-                    .r = 255*(j-1),
-                    .g = 255,
-                    .b = 0,
-            };
-        }else{
-            palette[i] = (rgb){
-                    .r = 255 * (j-2),
-                    .g = 255,
-                    .b = 255,
-            };
-        }
-    }
-}
-
 void master(int workers, rgb* palette){
     MPI_Status status;
 
@@ -154,7 +119,38 @@ int main(int argc, char* argv[]){
     MPI_Comm_size( MPI_COMM_WORLD, &size);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
 
-    rgb* palette = make_palette(MAX_ITER);
+    rgb* palette = (rgb*)malloc(sizeof(rgb)*size);
+    for(int i=0;i<size+1;i++){
+        if (i >= size){
+            palette[i] = (rgb){.r=0,.g=0,.b=0};
+            continue;
+        }
+        double j;
+        if(i == 0){
+            j = 3.0;
+        }else{
+            j = 3.0 * (log(i)/log(size-1.0));
+        }
+        if (j<1){
+            palette[i] = (rgb){
+                    .r = 0,
+                    .g = 255 * j,
+                    .b = 0
+            };
+        }else if(j<2){
+            palette[i] = (rgb){
+                    .r = 255*(j-1),
+                    .g = 255,
+                    .b = 0,
+            };
+        }else{
+            palette[i] = (rgb){
+                    .r = 255 * (j-2),
+                    .g = 255,
+                    .b = 255,
+            };
+        }
+    }
 
     if(rank == 0){
         master(size, palette);

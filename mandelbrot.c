@@ -1,8 +1,6 @@
-// https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set#Continuous_(smooth)_coloring
-
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define X 1920
 #define Y 1080
@@ -35,7 +33,7 @@ rgb mandelbrot(int px, int py, rgb* palette){
     double i = 0;
     double x2 = 0;
     double y2 = 0;
-  
+
     while(x*x + y*y <= 20 && i < MAX_ITER){
         y = 2*x*y + y0;
         x = x2 - y2 + x0;
@@ -58,17 +56,23 @@ rgb mandelbrot(int px, int py, rgb* palette){
 
     double mod = i - ((int)i) ; // cant mod doubles
     return (rgb){
-        .r = (int)lerp(c1.r, c2.r, mod),
-        .g = (int)lerp(c1.g, c2.g, mod),
-        .b = (int)lerp(c1.b, c2.b, mod),
+            .r = (int)lerp(c1.r, c2.r, mod),
+            .g = (int)lerp(c1.g, c2.g, mod),
+            .b = (int)lerp(c1.b, c2.b, mod),
     };
 
 }
 
-rgb* make_pallete(int size){
+
+int main(){
+    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
+    for(int y = 0;y < Y;y++){
+        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
+    }
     rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
-    for(int i=0;i<size+1;i++){
-        if (i >= size){
+    printf("made arrays\n");
+    for(int i=0;i<MAX_ITER+1;i++){
+        if (i >= MAX_ITER){
             palette[i] = (rgb){.r=0,.g=0,.b=0};
             continue;
         }
@@ -76,7 +80,7 @@ rgb* make_pallete(int size){
         if(i == 0){
             j = 3.0;
         }else{
-            j = 3.0 * (log(i)/log(size-1.0));
+            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
         }
 
         if (j<1){
@@ -99,15 +103,7 @@ rgb* make_pallete(int size){
             };
         }
     }
-}
 
-
-int main(){
-    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
-    for(int y = 0;y < Y;y++){
-        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
-    }
-    rgb* palette = make_pallete(MAX_ITER);
 
     printf("finished palette\n");
     for(int Py = 0; Py < Y; Py++){
