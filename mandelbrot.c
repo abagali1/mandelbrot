@@ -53,7 +53,7 @@ rgb mandelbrot(int px, int py, rgb* palatte){
         c2 = palatte[((int)i)+1];
     }
 
-    double mod = ((int)i) - i; // cant mod doubles
+    double mod = i - ((int)i) ; // cant mod doubles
     return (rgb){
         .r = (int)lerp(c1.r, c2.r, mod),
         .g = (int)lerp(c1.g, c2.g, mod),
