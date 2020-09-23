@@ -67,15 +67,18 @@ rgb mandelbrot(int px, int py, rgb* palette){
 
 void master(int workers, rgb* palette){
     MPI_Status status;
+    printf("init master\n");
 
-    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
+    rgb** colors = malloc(sizeof(rgb*)*Y);
     for(int y = 0;y < Y;y++){
-        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
+        colors[y] = malloc(sizeof(rgb)*X);
     }
+    printf("made colors\n");
 
     int size = X/(workers-1);
     int ssize = sizeof(rgb)*size*X;
     rgb* recv = (rgb*)malloc(sizeof(rgb)*ssize);
+    printf("made buffer\n");
     for(int i=0;i<(workers-1);i++){
         MPI_Recv(recv, ssize, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
         int source = status.MPI_SOURCE -1;
@@ -104,6 +107,8 @@ void slave(int workers, int rank, rgb* palette){
     rgb* buf = (rgb*)malloc(ssize);
     for(int y=0;y<size;y++){
         for(int x=0;x<X;x++){
+            rgb i = mandelbrot(x, ((rank-1)*size) + y, palette);
+            int j = x * size + y;
             buf[x*size + y] = mandelbrot(x, ((rank-1)*size) + y, palette);
         }
     }
@@ -118,10 +123,15 @@ int main(int argc, char* argv[]){
     MPI_Init(&argc, &argv);
     MPI_Comm_size( MPI_COMM_WORLD, &size);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
-
-    rgb* palette = (rgb*)malloc(sizeof(rgb)*size);
-    for(int i=0;i<size+1;i++){
-        if (i >= size){
+    
+    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
+    for(int y = 0;y < Y;y++){
+        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
+    }
+    rgb* palette = (rgb*)malloc(sizeof(rgb)*(MAX_ITER+1));
+    
+    for(int i=0;i<MAX_ITER+1;i++){
+        if (i >= MAX_ITER){
             palette[i] = (rgb){.r=0,.g=0,.b=0};
             continue;
         }
@@ -129,8 +139,9 @@ int main(int argc, char* argv[]){
         if(i == 0){
             j = 3.0;
         }else{
-            j = 3.0 * (log(i)/log(size-1.0));
+            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
         }
+
         if (j<1){
             palette[i] = (rgb){
                     .r = 0,
@@ -158,6 +169,11 @@ int main(int argc, char* argv[]){
         slave(size, rank, palette);
     }
 
+    free(palette);
+    for(int y=0;y<Y;y++){
+        free(colors[y]);
+    }
+    free(colors);
     MPI_Finalize();
-
+    return 0;
 }
