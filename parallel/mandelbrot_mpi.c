@@ -82,11 +82,14 @@ void master(int workers, rgb* palette){
     for(int i=0;i<(workers-1);i++){
         MPI_Recv(recv, ssize, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
         int source = status.MPI_SOURCE -1;
+        for(int j=0;j<size*X;j++){
+            printf("%d %d (%d, %d, %d)\n", source, j, recv[j].r, recv[j].g, recv[j].b);
+        }/*
         for(int x =0;x<size;x++){
             for(int y = 0;y<X;y++){
                 colors[source * size + x][y] = recv[x*size+y];
             }
-        }
+        }*/
     }
 
     FILE* fout;
