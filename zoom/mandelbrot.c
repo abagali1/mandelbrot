@@ -6,7 +6,7 @@
 #define Y 1080
 
 #define MAX_ITER 8000
-#define FRAMES 5
+#define FRAMES 250
 
 typedef struct {
     int r;

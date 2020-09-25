@@ -2,15 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X 1920
-#define Y 1080
+#define X 7680
+#define Y 4320
 
 #define R_MAX 1.5
 #define R_MIN -2
 #define I_MAX 1.0
 #define I_MIN -I_MAX
 
-#define MAX_ITER 8000
+#define MAX_ITER 1e9
 
 typedef struct {
     int r;
@@ -71,6 +71,8 @@ int main(){
     }
     rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
     printf("made arrays\n");
+    
+    #pragma omp parallel for
     for(int i=0;i<MAX_ITER+1;i++){
         if (i >= MAX_ITER){
             palette[i] = (rgb){.r=0,.g=0,.b=0};
