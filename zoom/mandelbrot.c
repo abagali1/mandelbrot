@@ -26,7 +26,7 @@ double lerp(double v0, double v1, double t) {
 }
 
 const Bounds initial = (Bounds){.r_max=1.5, .r_min=-1.5, .i_max=1.0, .i_min=-1.0};
-const Bounds final = (Bounds){.r_max=1, .r_min=-1, .i_max=0.5, .i_min=-0.5};
+const Bounds final = (Bounds){.r_max=-0.738850882975, .r_min=-0.738871642261, .i_max=-0.164141980147, .i_min=-0.164152164232};
 
 
 Color mandelbrot(int px, int py, Color* palette, Bounds b){
