@@ -44,5 +44,5 @@ sbatch zoom/zoom.sh
 ![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
 
 
-![mandelbrot-zoom]https://github.com/abagali1/mandelbrot/blob/master/zoom/zoom.gif)
+![mandelbrot-zoom](https://github.com/abagali1/mandelbrot/blob/master/zoom/zoom.gif)
 
