@@ -17,12 +17,32 @@ gcc parallel/mandelbrot_openmp.c -o mandelbrot -fopenmp -lm
 ./mandelbrot
 ```
 
-OpenMPI(WIP):
+OpenMPI:
 ```bash
 mpicc parallel/mandelbrot_openmpi.c -o mandelbrot -lm
 mpirun -np $(nproc) -mca btl ^openib mandelbrot
 ```
+or with Slurm
+```bash
+mpicc parallel/mandelbrot_openmpi.c -o mandelbrot -lm
+salloc -n {cores} mpiexec mandelbrot
+```
 
-Scripts in `slurm/` _should_ work with `sbatch` on a Slurm cluster but Slurm can be bad lol
+## Zoom (WIP)
+hands down the coolest part
+
+```bash
+mpicc zoom/mandelbrot.c -o mandelbrot -lm
+mpirun -np $(nproc) -mca btl ^openib mandelbort
+```
+or with Slurm
+```bash
+mpicc zoom/mandelbrot.c -o zoom/a.out -lm
+sbatch zoom/zoom.sh
+```
 
 ![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
+
+
+![mandelbrot-zoom](https://github/com/abagali1/mandelbrot/raw/master/zoom/zoom.gif)
+
