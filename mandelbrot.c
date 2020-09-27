@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define uchar unsigned char
+
 #define X 1920
 #define Y 1080
 
@@ -16,14 +18,16 @@ typedef struct {
     int r;
     int g;
     int b;
-} rgb;
+} Color;
 
 double lerp(double v0, double v1, double t) {
     return (1 - t) * v0 + t * v1;
 }
 
+Color* make_palette(int size);
 
-rgb mandelbrot(int px, int py, rgb* palette){
+
+Color mandelbrot(int px, int py, Color* palette){
     double x = 0; // complex (c)
     double y = 0;
 
@@ -46,8 +50,8 @@ rgb mandelbrot(int px, int py, rgb* palette){
         double nu = log(log_zn / log(2.0))/log(2.0);
         i += 1.0 - nu;
     }
-    rgb c1 = palette[(int)i];
-    rgb c2;
+    Color c1 = palette[(int)i];
+    Color c2;
     if((int)i + 1 > MAX_ITER){
         c2 = palette[(int)i];
     }else{
@@ -55,71 +59,73 @@ rgb mandelbrot(int px, int py, rgb* palette){
     }
 
     double mod = i - ((int)i) ; // cant mod doubles
-    return (rgb){
+    return (Color){
             .r = (int)lerp(c1.r, c2.r, mod),
             .g = (int)lerp(c1.g, c2.g, mod),
             .b = (int)lerp(c1.b, c2.b, mod),
     };
-
 }
 
 
 int main(){
-    rgb** colors = (rgb**)malloc(sizeof(rgb*)*Y);
-    for(int y = 0;y < Y;y++){
-        colors[y] = (rgb*)malloc(sizeof(rgb)*X);
+    uchar (*colors)[X][3] = malloc(sizeof(uchar[Y][X][3]));
+    Color* palette = make_palette(MAX_ITER);
+
+    for(int Py = 0; Py < Y; Py++){
+        for(int Px = 0; Px < X; Px++){
+            Color c = mandelbrot(Px, Py, palette);
+            colors[Py][Px][0] = c.r;
+            colors[Py][Px][1] = c.g;
+            colors[Py][Px][2] = c.b;
+        }
     }
-    rgb* palette = (rgb*)malloc(sizeof(rgb)*MAX_ITER+1);
-    printf("made arrays\n");
-    for(int i=0;i<MAX_ITER+1;i++){
-        if (i >= MAX_ITER){
-            palette[i] = (rgb){.r=0,.g=0,.b=0};
+    printf("finished calcs\n");
+    FILE* fout;
+    fout = fopen("output/ms.ppm", "w");
+    fprintf(fout, "P6\n%d %d\n255\n", X, Y);
+    for(int y = 0; y < Y; y++){
+        for(int x = 0; x < X; x++){
+            fwrite(colors[y][x], 1, 3, fout);
+        }
+    }
+}
+
+
+Color* make_palette(int size){
+    Color (*palette) = malloc(sizeof(Color[size+1]));
+    for(int i=0;i<size+1;i++){
+        if (i >= size){
+            palette[i] = (Color){.r=0,.g=0,.b=0};
             continue;
         }
         double j;
         if(i == 0){
             j = 3.0;
         }else{
-            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
+            j = 3.0 * (log(i)/log(size-1.0));
         }
 
         if (j<1){
-            palette[i] = (rgb){
+            palette[i] = (Color){
                     .r = 0,
                     .g = 255 * j,
                     .b = 0
             };
         }else if(j<2){
-            palette[i] = (rgb){
+            palette[i] = (Color){
                     .r = 255*(j-1),
                     .g = 255,
                     .b = 0,
             };
         }else{
-            palette[i] = (rgb){
+            palette[i] = (Color){
+                
                     .r = 255 * (j-2),
                     .g = 255,
                     .b = 255,
             };
         }
     }
-
-
-    printf("finished palette\n");
-    for(int Py = 0; Py < Y; Py++){
-        for(int Px = 0; Px < X; Px++){
-            colors[Py][Px] = mandelbrot(Px, Py, palette);
-        }
-    }
-    printf("finished calcs\n");
-    FILE* fout;
-    fout = fopen("output/ms.ppm", "w");
-    fprintf(fout, "P3\n");
-    fprintf(fout, "%d %d\n", X, Y);
-    fprintf(fout, "255\n");
-    for(int y = 0; y < Y; y++){
-        for(int x = 0; x < X; x++){
-            fprintf(fout, "%ld %ld %ld\n", (int)colors[y][x].r, (int)colors[y][x].g, (int)colors[y][x].b);
-        }
-    }
+    return palette;
 }
+

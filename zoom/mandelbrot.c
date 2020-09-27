@@ -1,17 +1,20 @@
+#include <mpi.h>
+#include <omp.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#define uchar unsigned char
 #define X 1920
 #define Y 1080
 
 #define MAX_ITER 8000
-#define FRAMES 250
+#define FRAMES 8000
 
 typedef struct {
-    int r;
-    int g;
-    int b;
+    long int r;
+    long int g;
+    long int b;
 } Color;
 
 typedef struct {
@@ -21,9 +24,11 @@ typedef struct {
     double i_min;
 } Bounds;
 
-double lerp(double v0, double v1, double t) {
+static inline double lerp(double v0, double v1, double t) {
     return (1 - t) * v0 + t * v1;
 }
+
+Color* make_palette(int size);
 
 const Bounds initial = (Bounds){.r_max=1.5, .r_min=-1.5, .i_max=1.0, .i_min=-1.0};
 const Bounds final = (Bounds){.r_max=-0.738850882975, .r_min=-0.738871642261, .i_max=-0.164141980147, .i_min=-0.164152164232};
@@ -69,16 +74,99 @@ Color mandelbrot(int px, int py, Color* palette, Bounds b){
 
 }
 
-
-int main(){
-    Color** colors = (Color**)malloc(sizeof(Color*)*Y);
-    for(int y = 0;y < Y;y++){
-        colors[y] = (Color*)malloc(sizeof(Color)*X);
+void master(int workers, Color* palette, double frame){
+    MPI_Status status;
+    
+    for(int i=1;i<workers;i++){
+        MPI_Request req;
+        MPI_Isend(&frame, 1, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &req);
+        MPI_Request_free(&req);
     }
-    Color* palette = (Color*)malloc(sizeof(Color)*MAX_ITER+1);
-    printf("made arrays\n");
-    for(int i=0;i<MAX_ITER+1;i++){
-        if (i >= MAX_ITER){
+    
+    uchar (*colors)[X][3] = malloc(sizeof(uchar[Y][X][3]));
+    
+    int size = Y/(workers-1);
+    Color* recv = (Color*)malloc(sizeof(Color)*size*X);
+    for(int i=0;i<(workers-1);i++){
+        MPI_Recv(recv, sizeof(Color)*size*X, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+        int source = status.MPI_SOURCE - 1;
+        for(int x =0;x<size;x++){
+            for(int y = 0;y<X;y++){
+                int i = source * size + x;
+                Color c = recv[y*size+x];
+                colors[i][y][0] = c.r;
+                colors[i][y][1] = c.g;
+                colors[i][y][2] = c.b;
+            }
+        }
+    }
+
+    FILE* fout;
+    char buf[17];
+    snprintf(buf, sizeof(buf), "output/%05d.ppm", (int)frame);
+    fout = fopen(buf, "w");
+    fprintf(fout, "P6\n%d %d\n255\n", X, Y);
+    for(int y = 0; y < Y; y++){
+        for(int x = 0; x < X; x++){
+            fwrite(colors[y][x], 1, 3, fout);
+        }
+    }
+    printf("Finished %d\n", (int)frame);
+    free(colors);
+}
+
+void slave(int workers, int rank, Color* palette){
+    double frame;
+    
+    MPI_Recv(&frame, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    double t = frame/FRAMES*1.0;
+    Bounds bounds = (Bounds){
+        .r_max=lerp(initial.r_max, final.r_max, t),
+        .r_min=lerp(initial.r_min, final.r_min, t),
+        .i_max=lerp(initial.i_max, final.i_max, t),
+        .i_min=lerp(initial.i_min, final.i_min, t),
+    };
+    int size = Y / (workers-1);
+    int ssize = sizeof(Color) * size * X;
+    Color* buf = (Color*)malloc(ssize);
+    for(int y=0;y<size;y++){
+        for(int x=0;x<X;x++){
+            int j = x * size + y;
+            buf[x*size + y] = mandelbrot(x, ((rank-1)*size) + y, palette, bounds);
+        }
+    }
+    MPI_Send(buf, ssize, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+    free(buf);
+}
+
+
+int main(int argc, char* argv[]){
+
+    int size, rank;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size( MPI_COMM_WORLD, &size);
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank);
+    
+    Color* palette = make_palette(MAX_ITER);
+
+    for(int f=0;f <= FRAMES; f++){
+        if(rank == 0){
+            master(size, palette, (double)f);
+        }else{
+            slave(size, rank, palette);
+        }
+    }
+    free(palette);
+    MPI_Finalize();
+    return 0;
+}
+
+
+Color* make_palette(int size){
+    Color* palette = (Color*)malloc(sizeof(Color)*(size+1));
+        for(int i=0;i<size+1;i++){
+        if (i >= size){
             palette[i] = (Color){.r=0,.g=0,.b=0};
             continue;
         }
@@ -86,7 +174,7 @@ int main(){
         if(i == 0){
             j = 3.0;
         }else{
-            j = 3.0 * (log(i)/log(MAX_ITER-1.0));
+            j = 3.0 * (log(i)/log(size-1.0));
         }
 
         if (j<1){
@@ -109,34 +197,7 @@ int main(){
             };
         }
     }
-    printf("finished palette\n");
-
-    for(int f = 0;f <= FRAMES;f++){
-        double t = f*1.0/FRAMES*1.0;
-        Bounds bounds = (Bounds){
-            .r_max=lerp(initial.r_max, final.r_max, t),
-            .r_min=lerp(initial.r_min, final.r_min, t),
-            .i_max=lerp(initial.i_max, final.i_max, t),
-            .i_min=lerp(initial.i_min, final.i_min, t),
-        };
-	    #pragma omp parallel for
-	    for(int Py = 0; Py < Y; Py++){
-	        for(int Px = 0; Px < X; Px++){
-	            colors[Py][Px] = mandelbrot(Px, Py, palette, bounds);
-	        }
-	    }
-	    printf("finished calc %02d\n", f);
-	    FILE* fout;
-        char buf[14];
-        snprintf(buf, sizeof(buf), "output/%02d.ppm", f);
-	    fout = fopen(buf, "w");
-	    fprintf(fout, "P3\n");
-	    fprintf(fout, "%d %d\n", X, Y);
-	    fprintf(fout, "255\n");
-	    for(int y = 0; y < Y; y++){
-	        for(int x = 0; x < X; x++){
-	            fprintf(fout, "%ld %ld %ld\n", (int)colors[y][x].r, (int)colors[y][x].g, (int)colors[y][x].b);
-	        }
-	    }
-    }
+    return palette;
 }
+
+
