@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define uchar unsigned char
+
 #define X 1920
 #define Y 1080
 
@@ -69,11 +71,8 @@ Color mandelbrot(int px, int py, Color* palette){
 
 void master(int workers, Color* palette){
     MPI_Status status;
-
-    Color** colors = (Color**)malloc(sizeof(Color*)*Y);
-    for(int y = 0;y < Y;y++){
-        colors[y] = (Color*)malloc(sizeof(Color)*X);
-    }
+    uchar (*colors)[X][3] = malloc(sizeof(uchar[Y][X][3]));
+    
 
     int size = Y/(workers-1);
     Color* recv = (Color*)malloc(sizeof(Color)*size*X);
@@ -84,21 +83,24 @@ void master(int workers, Color* palette){
         printf("Received from %d\n", source);
         for(int x =0;x<size;x++){
             for(int y = 0;y<X;y++){
-                colors[source * size + x][y] = recv[y*size+x];
+                Color c = recv[y*size+x];
+                int i = source*size + x;
+                colors[i][y][0] = c.r;
+                colors[i][y][1] = c.g;
+                colors[i][y][2] = c.b;
             }
         }
     }
 
     FILE* fout;
     fout = fopen("output/ms.ppm", "w");
-    fprintf(fout, "P3\n");
-    fprintf(fout, "%d %d\n", X, Y);
-    fprintf(fout, "255\n");
+    fprintf(fout, "P6\n%d %d\n255\n", X, Y);
     for(int y = 0; y < Y; y++){
         for(int x = 0; x < X; x++){
-            fprintf(fout, "%ld %ld %ld\n", colors[y][x].r, colors[y][x].g, colors[y][x].b);
+            fwrite(colors[y][x], 1, 3, fout);
         }
     }
+    fclose(fout);
 }
 
 void slave(int workers, int rank, Color* palette){
