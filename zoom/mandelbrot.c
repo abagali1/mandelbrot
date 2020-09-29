@@ -7,9 +7,10 @@
 #define uchar unsigned char
 #define X 1920
 #define Y 1080
+//#define R 1.5 // aspect ratio
 
 #define MAX_ITER 8000
-#define FRAMES 8000
+#define FRAMES 50 
 
 typedef struct {
     long int r;
@@ -28,10 +29,14 @@ static inline double lerp(double v0, double v1, double t) {
     return (1 - t) * v0 + t * v1;
 }
 
+static inline double safe_sqrt(double x){
+    return x > 0 ? sqrt(x) : -sqrt(-x);
+}
+
 Color* make_palette(int size);
 
 const Bounds initial = (Bounds){.r_max=1.5, .r_min=-1.5, .i_max=1.0, .i_min=-1.0};
-const Bounds final = (Bounds){.r_max=-0.738850882975, .r_min=-0.738871642261, .i_max=-0.164141980147, .i_min=-0.164152164232};
+const Bounds final = (Bounds){.r_max=0.738850882975, .r_min=-0.738850882975, .i_max=0.164141980147, .i_min=-0.164141980147};
 
 
 Color mandelbrot(int px, int py, Color* palette, Bounds b){
@@ -78,12 +83,12 @@ void master(int workers, Color* palette, double frame){
     MPI_Status status;
     
     for(int i=1;i<workers;i++){
-        MPI_Request req;
+        MPI_Request req; // non-blocking send for faster broadcast
         MPI_Isend(&frame, 1, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &req);
         MPI_Request_free(&req);
     }
     
-    uchar (*colors)[X][3] = malloc(sizeof(uchar[Y][X][3]));
+    uchar (*colors)[X][3] = malloc(sizeof(uchar[Y][X][3])); //uchar arrays are faster to write
     
     int size = Y/(workers-1);
     Color* recv = (Color*)malloc(sizeof(Color)*size*X);
@@ -105,12 +110,13 @@ void master(int workers, Color* palette, double frame){
     char buf[17];
     snprintf(buf, sizeof(buf), "output/%05d.ppm", (int)frame);
     fout = fopen(buf, "w");
-    fprintf(fout, "P6\n%d %d\n255\n", X, Y);
+    fprintf(fout, "P6\n%d %d\n255\n", X, Y);//P6 to use fwrite
     for(int y = 0; y < Y; y++){
         for(int x = 0; x < X; x++){
             fwrite(colors[y][x], 1, 3, fout);
         }
     }
+    fclose(fout);
     printf("Finished %d\n", (int)frame);
     free(colors);
 }
@@ -120,12 +126,17 @@ void slave(int workers, int rank, Color* palette){
     
     MPI_Recv(&frame, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     double t = frame/FRAMES*1.0;
+    
+    double area = lerp((initial.r_max - initial.r_min)*(initial.i_max - initial.i_min), (final.r_max - final.r_min)*(final.i_max - final.i_min), t);
+    double R = lerp(initial.r_max/initial.i_max, final.r_max/final.i_max, t);
+    double x = sqrt(area/R);
     Bounds bounds = (Bounds){
-        .r_max=lerp(initial.r_max, final.r_max, t),
-        .r_min=lerp(initial.r_min, final.r_min, t),
-        .i_max=lerp(initial.i_max, final.i_max, t),
-        .i_min=lerp(initial.i_min, final.i_min, t),
+        .r_max = x/2,
+        .r_min = -x/2,
+        .i_max = R*x/2,
+        .i_min = -R*x/2,
     };
+    
     int size = Y / (workers-1);
     int ssize = sizeof(Color) * size * X;
     Color* buf = (Color*)malloc(ssize);
@@ -199,5 +210,6 @@ Color* make_palette(int size){
     }
     return palette;
 }
+
 
 
