@@ -29,8 +29,8 @@ static inline double lerp(double v0, double v1, double t) {
     return (1 - t) * v0 + t * v1;
 }
 
-static inline double safe_sqrt(double x){
-    return x > 0 ? sqrt(x) : -sqrt(-x);
+static inline double safe_log(double x){
+    return x > 0 ? log(x) : -log(-x);
 }
 
 Color* make_palette(int size);
@@ -42,10 +42,10 @@ const Bounds final = (Bounds){.r_max=0.738850882975, .r_min=-0.738850882975, .i_
 Color mandelbrot(int px, int py, Color* palette, Bounds b){
     double x = 0; // complex (c)
     double y = 0;
-
+    
     double x0 = b.r_min + (px * ((b.r_max - b.r_min)/(X*1.0))); // complex scale of Px
     double y0 = b.i_min + (py * ((b.i_max - b.i_min)/(Y*1.0))); // complex scale of Py
-
+    
     double i = 0;
     double x2 = 0;
     double y2 = 0;
@@ -62,6 +62,7 @@ Color mandelbrot(int px, int py, Color* palette, Bounds b){
         double nu = log(log_zn / log(2.0))/log(2.0);
         i += 1.0 - nu;
     }
+    
     Color c1 = palette[(int)i];
     Color c2;
     if((int)i + 1 > MAX_ITER){
@@ -69,7 +70,6 @@ Color mandelbrot(int px, int py, Color* palette, Bounds b){
     }else{
         c2 = palette[((int)i)+1];
     }
-
     double mod = i - ((int)i) ; // cant mod doubles
     return (Color){
         .r = (int)lerp(c1.r, c2.r, mod),
@@ -128,15 +128,16 @@ void slave(int workers, int rank, Color* palette){
     double t = frame/FRAMES*1.0;
     
     Bounds bounds = (Bounds){
-        .r_max=exp(lerp(log(initial.r_max), log(final.r_max), t)),
-        .r_min=exp(lerp(log(initial.r_min), log(final.r_min), t)),
-        .i_max=exp(lerp(log(initial.i_max), log(final.i_max), t)),
-        .i_min=exp(lerp(log(initial.i_min), log(final.i_min), t)),
+        .r_max=exp(lerp(safe_log(initial.r_max), safe_log(final.r_max), t)),
+        .r_min=exp(lerp(safe_log(initial.r_min), safe_log(final.r_min), t)),
+        .i_max=exp(lerp(safe_log(initial.i_max), safe_log(final.i_max), t)),
+        .i_min=exp(lerp(safe_log(initial.i_min), safe_log(final.i_min), t)),
     };
     
     int size = Y / (workers-1);
     int ssize = sizeof(Color) * size * X;
     Color* buf = (Color*)malloc(ssize);
+    printf("start\n");
     for(int y=0;y<size;y++){
         for(int x=0;x<X;x++){
             int j = x * size + y;
@@ -157,7 +158,7 @@ int main(int argc, char* argv[]){
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     
     Color* palette = make_palette(MAX_ITER);
-
+    
     for(int f=0;f <= FRAMES; f++){
         if(rank == 0){
             master(size, palette, (double)f);
