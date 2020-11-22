@@ -127,14 +127,11 @@ void slave(int workers, int rank, Color* palette){
     MPI_Recv(&frame, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     double t = frame/FRAMES*1.0;
     
-    double area = lerp((initial.r_max - initial.r_min)*(initial.i_max - initial.i_min), (final.r_max - final.r_min)*(final.i_max - final.i_min), t);
-    double R = lerp(initial.r_max/initial.i_max, final.r_max/final.i_max, t);
-    double x = sqrt(area/R);
     Bounds bounds = (Bounds){
-        .r_max = x/2,
-        .r_min = -x/2,
-        .i_max = R*x/2,
-        .i_min = -R*x/2,
+        .r_max=exp(lerp(log(initial.r_max), log(final.r_max), t)),
+        .r_min=exp(lerp(log(initial.r_min), log(final.r_min), t)),
+        .i_max=exp(lerp(log(initial.i_max), log(final.i_max), t)),
+        .i_min=exp(lerp(log(initial.i_min), log(final.i_min), t)),
     };
     
     int size = Y / (workers-1);
