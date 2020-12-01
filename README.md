@@ -30,6 +30,22 @@ salloc -n {cores} mpiexec mandelbrot
 
 ![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
 
+## Iterations
+looks nice
+
+```bash
+mpicc iters/mandelbrot.c -o mandelbrot -lm
+mpirun -np $(nproc) -mca btl ^openib mandelbrot
+```
+
+or with Slurm
+```bash
+mpicc iters/mandelbrot.c -lm
+sbatch iters/iter.sh
+```
+
+![mandelbrot](https://github.com/abagali1/mandelbrot/blob/master/iters/output.gif)
+
 ## Zoom (WIP)
 hands down the coolest part
 
