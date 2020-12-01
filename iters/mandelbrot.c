@@ -15,7 +15,7 @@
 
 #define MAX_ITER 8000
 #define MIN_ITER 10
-#define dITER 10
+#define dITER 100
 
 typedef struct {
     long int r;
@@ -138,9 +138,9 @@ int main(int argc, char* argv[]){
     MPI_Comm_size( MPI_COMM_WORLD, &size);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     
-    Color* palette = make_palette(MAX_ITER);
 
     for(int i=MIN_ITER; i<=MAX_ITER; i+=dITER){
+        Color* palette = make_palette(i);
         if(rank == 0){
             master(size, palette, i);
         }else{
