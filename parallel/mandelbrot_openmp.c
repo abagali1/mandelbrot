@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X 7680
+#define X 7680 
 #define Y 4320
 #define uchar unsigned char
 
@@ -108,22 +108,22 @@ Color* make_palette(int size){
 
         if (j<1){
             palette[i] = (Color){
-                    .r = 0,
-                    .g = 255 * j,
-                    .b = 0
+                    .r = 255 * j,
+                    .g = 0,
+                    .b = 255 * j
             };
         }else if(j<2){
             palette[i] = (Color){
-                    .r = 255*(j-1),
-                    .g = 255,
-                    .b = 0,
+                    .r = 255,
+                    .g = 255*(j-1),
+                    .b = 255,
             };
         }else{
             palette[i] = (Color){
                 
                     .r = 255 * (j-2),
                     .g = 255,
-                    .b = 255,
+                    .b = 255 * (j-2),
             };
         }
     }
