@@ -28,6 +28,8 @@ mpicc parallel/mandelbrot_openmpi.c -o mandelbrot -lm
 salloc -n {cores} mpiexec mandelbrot
 ```
 
+![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
+
 ## Zoom (WIP)
 hands down the coolest part
 
@@ -40,9 +42,6 @@ or with Slurm
 mpicc zoom/mandelbrot.c -o zoom/a.out -lm
 sbatch zoom/zoom.sh
 ```
-
-![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
-
 
 ![mandelbrot-zoom](https://github.com/abagali1/mandelbrot/blob/master/zoom/zoom.gif)
 
