@@ -55,7 +55,7 @@ mpirun -np $(nproc) -mca btl ^openib mandelbort
 ```
 or with Slurm
 ```bash
-mpicc zoom/mandelbrot.c -o zoom/a.out -lm
+mpicc zoom/mandelbrot.c -lm
 sbatch zoom/zoom.sh
 ```
 
