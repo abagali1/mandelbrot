@@ -3,5 +3,5 @@
 
 export OMPI_MCA_btl=self,tcp
 mpirun ./a.out
-ffmpeg -pattern_type glob -framerate 25 -i "output/*.ppm" output.gif
+ffmpeg -pattern_type glob -framerate 25 -i "output/*.ppm" output.mp4
 

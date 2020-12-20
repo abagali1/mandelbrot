@@ -15,8 +15,8 @@
 #define I_MIN -I_MAX
 
 #define MAX_ITER 8000
-#define MIN_POWER -5
-#define MAX_POWER 5
+#define MIN_POWER 1
+#define MAX_POWER 10
 #define dP 0.01
 
 typedef struct {
@@ -27,6 +27,10 @@ typedef struct {
 
 static inline double lerp(double v0, double v1, double t) {
     return (1 - t) * v0 + t * v1;
+}
+
+static inline double max(double a, double b){
+    return a > b ? a : b;
 }
 
 Color* make_palette(int size);
@@ -47,8 +51,8 @@ Color mandelbrot(int px, int py, Color* palette, double power){
     
 
     if(i < MAX_ITER){
-        double log_zn = log(cabsf(z)) / 2.0;
-        double nu = log(log_zn / log(2.0))/log(2.0);
+        double log_zn = log(cabsf(z)) / power;
+        double nu = log(log_zn / log(2.0))/log(max(2.0, abs(power)));
         i += 1.0 - nu;
     }
     Color c1 = palette[(int)i];
@@ -95,6 +99,7 @@ void master(int workers, Color* palette, double power){
             }
         }
     }
+    printf("fin calc\n");
 
     FILE* fout;
     char buf[20];
