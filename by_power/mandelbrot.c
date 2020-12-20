@@ -16,7 +16,7 @@
 
 #define MAX_ITER 8000
 #define MIN_POWER 1
-#define MAX_POWER 10
+#define MAX_POWER 1.10
 #define dP 0.01
 
 typedef struct {
@@ -37,17 +37,17 @@ Color mandelbrot(int px, int py, Color* palette, double power){
     double y0 = I_MIN + (py * ((I_MAX - I_MIN)/(Y*1.0))); // complex scale of Py
 
     double i = 0;
-    double complex z = CMPLX(0.0, 0.0);
-    double complex c = CMPLX(x0, y0);
+    float complex z = CMPLX(0.0, 0.0);
+    float complex c = CMPLX(x0, y0);
     
-    while(cabs(z) <= 20 && i < MAX_ITER){
-        z = cpow(z, power) + c;
+    while(cabsf(z) <= 20 && i < MAX_ITER){
+        z = cpowf(z, power) + c;
         i++;
     }
     
 
     if(i < MAX_ITER){
-        double log_zn = log(cabs(z)) / 2.0;
+        double log_zn = log(cabsf(z)) / 2.0;
         double nu = log(log_zn / log(2.0))/log(2.0);
         i += 1.0 - nu;
     }
