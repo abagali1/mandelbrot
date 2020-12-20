@@ -13,9 +13,9 @@
 #define FRAMES 50 
 
 typedef struct {
-    long int r;
-    long int g;
-    long int b;
+    uchar r;
+    uchar g;
+    uchar b;
 } Color;
 
 typedef struct {
@@ -50,7 +50,7 @@ Color mandelbrot(int px, int py, Color* palette, Bounds b){
     double x2 = 0;
     double y2 = 0;
   
-    while(x*x + y*y <= 20 && i < MAX_ITER){
+    while(x2+ y2 <= 20 && i < MAX_ITER){
         y = 2*x*y + y0;
         x = x2 - y2 + x0;
         x2 = x*x;

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <complex.h>
 
 #define uchar unsigned char
 
@@ -14,8 +15,9 @@
 #define I_MIN -I_MAX
 
 #define MAX_ITER 8000
-#define MIN_ITER 10
-#define dITER 100
+#define MIN_POWER 1
+#define MAX_POWER 10
+#define dP 0.01
 
 typedef struct {
     uchar r;
@@ -30,33 +32,28 @@ static inline double lerp(double v0, double v1, double t) {
 Color* make_palette(int size);
 
 
-Color mandelbrot(int px, int py, Color* palette, int max_iter){
-    double x = 0; // complex (c)
-    double y = 0;
-
+Color mandelbrot(int px, int py, Color* palette, double power){
     double x0 = R_MIN + (px * ((R_MAX - R_MIN)/(X*1.0))); // complex scale of Px
     double y0 = I_MIN + (py * ((I_MAX - I_MIN)/(Y*1.0))); // complex scale of Py
 
     double i = 0;
-    double x2 = 0;
-    double y2 = 0;
-
-    while(x2 + y2 <= 20 && i < max_iter){
-        y = 2*x*y + y0;
-        x = x2 - y2 + x0;
-        x2 = x*x;
-        y2 = y*y;
+    double complex z = CMPLX(0.0, 0.0);
+    double complex c = CMPLX(x0, y0);
+    
+    while(cabs(z) <= 20 && i < MAX_ITER){
+        z = cpow(z, power) + c;
         i++;
     }
+    
 
-    if(i < max_iter){
-        double log_zn = log(x*x + y*y) / 2.0;
+    if(i < MAX_ITER){
+        double log_zn = log(cabs(z)) / 2.0;
         double nu = log(log_zn / log(2.0))/log(2.0);
         i += 1.0 - nu;
     }
     Color c1 = palette[(int)i];
     Color c2;
-    if((int)i + 1 > max_iter){
+    if((int)i + 1 > MAX_ITER){
         c2 = palette[(int)i];
     }else{
         c2 = palette[((int)i)+1];
@@ -71,14 +68,15 @@ Color mandelbrot(int px, int py, Color* palette, int max_iter){
 
 }
 
-void master(int workers, Color* palette, int iter){
+void master(int workers, Color* palette, double power){
     MPI_Status status;
     
     for(int i=1;i<workers;i++){
         MPI_Request req; // non-blocking send for faster broadcast
-        MPI_Isend(&iter, 1, MPI_INT, i, 1, MPI_COMM_WORLD, &req);
+        MPI_Isend(&power, 1, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &req);
         MPI_Request_free(&req);
     }
+    
     uchar (*colors)[X][3] = malloc(sizeof(uchar[Y][X][3]));
     
 
@@ -100,7 +98,7 @@ void master(int workers, Color* palette, int iter){
 
     FILE* fout;
     char buf[20];
-    snprintf(buf, sizeof(buf), "output/%.04d.ppm", (iter-MIN_ITER)/dITER);
+    snprintf(buf, sizeof(buf), "output/%.04d.ppm", (int)((power-MIN_POWER)/dP));
     fout = fopen(buf, "w");
     fprintf(fout, "P6\n%d %d\n255\n", X, Y);
     for(int y = 0; y < Y; y++){
@@ -108,21 +106,20 @@ void master(int workers, Color* palette, int iter){
             fwrite(colors[y][x], 1, 3, fout);
         }
     }
+    printf("Finished %.04d\n", (int)((power-MIN_POWER)/dP));
     fclose(fout);
-    printf("Finished %d\n", iter);
-    free(colors);
 }
 
 void slave(int workers, int rank, Color* palette){
-    int iter;
-    MPI_Recv(&iter, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    double power;
+    MPI_Recv(&power, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     int size = Y / (workers-1);
     int ssize = sizeof(Color) * size * X;
     Color* buf = (Color*)malloc(ssize);
     for(int y=0;y<size;y++){
         for(int x=0;x<X;x++){
             int j = x * size + y;
-            buf[x*size + y] = mandelbrot(x, ((rank-1)*size) + y, palette, iter);
+            buf[x*size + y] = mandelbrot(x, ((rank-1)*size) + y, palette, power);
         }
     }
     MPI_Send(buf, ssize, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
@@ -138,9 +135,9 @@ int main(int argc, char* argv[]){
     MPI_Comm_size( MPI_COMM_WORLD, &size);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     
-
-    for(int i=MIN_ITER; i<=MAX_ITER; i+=dITER){
-        Color* palette = make_palette(i);
+    Color* palette = make_palette(MAX_ITER);
+    
+    for(double i=MIN_POWER; i<=MAX_POWER; i+=dP){
         if(rank == 0){
             master(size, palette, i);
         }else{
@@ -189,4 +186,3 @@ Color* make_palette(int size){
     }
     return palette;
 }
-

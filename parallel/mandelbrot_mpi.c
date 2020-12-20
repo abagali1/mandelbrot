@@ -16,9 +16,9 @@
 #define MAX_ITER 8000
 
 typedef struct {
-    long int r;
-    long int g;
-    long int b;
+    uchar r;
+    uchar g;
+    uchar b;
 } Color;
 
 static inline double lerp(double v0, double v1, double t) {
@@ -39,7 +39,7 @@ Color mandelbrot(int px, int py, Color* palette){
     double x2 = 0;
     double y2 = 0;
 
-    while(x*x + y*y <= 20 && i < MAX_ITER){
+    while(x2 + y2 <= 20 && i < MAX_ITER){
         y = 2*x*y + y0;
         x = x2 - y2 + x0;
         x2 = x*x;
@@ -110,7 +110,7 @@ void slave(int workers, int rank, Color* palette){
     for(int y=0;y<size;y++){
         for(int x=0;x<X;x++){
             int j = x * size + y;
-            buf[x*size + y] = mandelbrot(x, ((rank-1)*size) + y, palette, bounds);
+            buf[x*size + y] = mandelbrot(x, ((rank-1)*size) + y, palette);
         }
     }
     MPI_Send(buf, ssize, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
