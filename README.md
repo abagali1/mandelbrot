@@ -67,7 +67,7 @@ mpicc multibrot/multibrot.c -o multibrot/a.out -lm -Ofast
 sbatch multibrot/multibrot.sh
 ```
 
-![multibrot](https://imgur.com/a/fSdZdlA)
+![multibrot](https://i.imgur.com/F9YomKX.mp4)
 
 ## Zoom (WIP)
 hands down the coolest part
