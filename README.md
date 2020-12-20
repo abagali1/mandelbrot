@@ -1,6 +1,8 @@
 # mandelbrot
-
 Should've done this a long time ago but oh well
+
+
+![equation](https://render.githubusercontent.com/render/math?math=z_{n%2B1}%20-%3E%20z_n^2%20%2B%20c&mode=inline)
 
 
 All ppms are stored at `output/ms.ppm`
@@ -22,6 +24,7 @@ OpenMPI:
 mpicc parallel/mandelbrot_openmpi.c -o mandelbrot -lm
 mpirun -np $(nproc) -mca btl ^openib mandelbrot
 ```
+
 or with Slurm
 ```bash
 mpicc parallel/mandelbrot_openmpi.c -o mandelbrot -lm
@@ -40,11 +43,30 @@ mpirun -np $(nproc) -mca btl ^openib mandelbrot
 
 or with Slurm
 ```bash
-mpicc iters/mandelbrot.c -lm
+mpicc iters/mandelbrot.c -o iters/a.out -lm -Ofast 
 sbatch iters/iter.sh
 ```
 
 ![mandelbrot](https://github.com/abagali1/mandelbrot/blob/master/iters/output.gif)
+
+## Multibrot
+variation of conventional mandelbrot equation
+![equation](https://render.githubusercontent.com/render/math?math=z_{n%2B1}%20-%3E%20z_n^x%20%2B%20c&mode=inline)
+where X varies.
+
+in `multibrot/multibrot.c` set `MIN_POWER` and `MAX_POWER` to set range for X 
+
+```bash
+mpicc multibrot/multibrot.c -o multibrot -lm -Ofast
+mpirun -np $(nproc) -mca btl ^openib multibrot
+```
+
+or with Slurm
+```bash
+mpicc multibrot/multibrot.c -o multibrot/a.out -lm -Ofast
+sbatch multibrot/multibrot.sh
+```
+
 
 ## Zoom (WIP)
 hands down the coolest part
@@ -55,7 +77,7 @@ mpirun -np $(nproc) -mca btl ^openib mandelbort
 ```
 or with Slurm
 ```bash
-mpicc zoom/mandelbrot.c -lm
+mpicc zoom/mandelbrot.c -o zoom/a.out -lm -Ofast
 sbatch zoom/zoom.sh
 ```
 

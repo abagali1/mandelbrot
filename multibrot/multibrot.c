@@ -15,8 +15,8 @@
 #define I_MIN -I_MAX
 
 #define MAX_ITER 8000
-#define MIN_POWER 1
-#define MAX_POWER 1.10
+#define MIN_POWER -5
+#define MAX_POWER 5
 #define dP 0.01
 
 typedef struct {
