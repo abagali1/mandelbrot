@@ -67,7 +67,7 @@ mpicc multibrot/multibrot.c -o multibrot/a.out -lm -Ofast
 sbatch multibrot/multibrot.sh
 ```
 
-![mandelbrot-zoom](https://github.com/abagali1/mandelbrot/blob/master/multibrot/output/output.gif)
+![multibrot](https://imgur.com/a/fSdZdlA)
 
 ## Zoom (WIP)
 hands down the coolest part
