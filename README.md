@@ -7,11 +7,15 @@ Should've done this a long time ago but oh well
 
 All ppms are stored at `output/ms.ppm`
 
-Regular:
+## Regular:
 ```bash
 gcc mandelbrot.c -o mandelbrot -lm
 ./mandelbrot
 ```
+
+![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
+
+## Parallel
 
 OpenMP:
 ```bash
@@ -31,7 +35,9 @@ mpicc parallel/mandelbrot_openmpi.c -o mandelbrot -lm
 salloc -n {cores} mpiexec mandelbrot
 ```
 
-![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/output/readme.png)
+Demonstration of set rendered in parallel
+![mandelbrot](https://github.com/abagali1/mandelbrot/raw/master/parallel/parallel.gif)
+
 
 ## Iterations
 looks nice
