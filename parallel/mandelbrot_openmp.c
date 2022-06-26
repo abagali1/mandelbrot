@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define X 7680 
-#define Y 4320
+#define X 1920
+#define Y 1080
 #define uchar unsigned char
 
 #define R_MAX 1.5
@@ -89,6 +89,9 @@ int main(){
         }
     }
     fclose(fout);
+
+    free(palette);
+    free(colors);
 }
 
 
