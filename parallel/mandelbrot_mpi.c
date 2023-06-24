@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 #define uchar unsigned char
 
@@ -92,6 +93,7 @@ void master(int workers, Color* palette){
         }
     }
 
+    mkdir("output", 0755);
     FILE* fout;
     fout = fopen("output/ms.ppm", "w");
     fprintf(fout, "P6\n%d %d\n255\n", X, Y);
@@ -177,4 +179,3 @@ Color* make_palette(int size){
     }
     return palette;
 }
-
